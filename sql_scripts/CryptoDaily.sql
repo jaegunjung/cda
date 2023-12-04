@@ -8,9 +8,11 @@ CREATE TABLE  {TBLNAME} (
 	Crypto nvarchar(50) NOT NULL,
 	[Date] datetimeoffset (7) NOT NULL,
 	Open_Price_USD decimal(20,2) NOT NULL,
+	Total_Volume_USD decimal(30,2) NOT NULL,
+	Market_Cap_USD decimal(38,2) NOT NULL,
 	DateTmModified datetimeoffset (7) default getutcdate(),
 )
-CREATE UNIQUE INDEX uidx_BTC_Daily on {TBLNAME} ([Date]);
+CREATE UNIQUE INDEX uidx_CryptoDaily on {TBLNAME} ([Date]);
 '
 DECLARE @SQL_SCRIPT VARCHAR(MAX)
 

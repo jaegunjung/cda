@@ -35,15 +35,24 @@ def load_crypto_daily(crypto: str = 'bitcoin', currency: str = 'usd', days: int 
     response = requests.get(url, params=params)
     data = response.json()
 
-    df = pd.DataFrame(data['prices'], columns=['time', 'price'])
+    # Construct three dataframes
+    prices = pd.DataFrame(data['prices'], columns=['time', 'price'])
+    market_cap = pd.DataFrame(data['market_caps'], columns=['time', 'market_cap'])
+    total_vol = pd.DataFrame(data['total_volumes'], columns=['time', 'total_volume'])
 
-    # Convert epoch time to regular datetime
-    df['Date'] = pd.to_datetime(df['time']*.001, unit='s', utc=True)
-    df['Date'] = df['Date'].dt.strftime('%Y-%m-%d %H:%M:%S%z').str[:22] + ':' + df['Date'].dt.strftime('%z').str[3:]
-    df = df.rename(columns={'price': 'Open_Price_USD'})
-    df['Crypto'] = CRYPTO_SYMBOL[crypto]
+    # Merge them and process
+    if (len(prices) == len(market_cap) == len(total_vol)) and \
+        (prices['time'] == market_cap['time']).all() and (market_cap['time'] == total_vol['time']).all():
+        df = pd.concat([prices, market_cap['market_cap'], total_vol['total_volume']], axis=1)
+        # Convert epoch time to regular datetime
+        df['Date'] = pd.to_datetime(df['time']*.001, unit='s', utc=True)
+        df['Date'] = df['Date'].dt.strftime('%Y-%m-%d %H:%M:%S%z').str[:22] + ':' + df['Date'].dt.strftime('%z').str[3:]
+        df.drop(columns=['time'], inplace=True)
+        df = df.rename(columns={'price': 'Open_Price_USD', 'market_cap': 'Market_Cap_USD',
+                                'total_volume': 'Total_Volume_USD'})
+        df['Crypto'] = CRYPTO_SYMBOL[crypto]
 
-    return df[['Crypto', 'Date', 'Open_Price_USD']][:-1]  # last record is not the open price.
+        return df[:-1]  # last record is not the open price.
 
 
 def calc_days(crypto):
@@ -80,5 +89,5 @@ def process_cripto_daily(crypto: str = 'bitcoin', currency: str = 'usd', init: b
 
 
 if __name__ == '__main__':
-    # ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd', True)  # Initial load
-    ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd')
+    ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd', True)  # Initial load
+    # ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd')
