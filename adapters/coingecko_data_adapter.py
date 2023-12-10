@@ -89,5 +89,5 @@ def process_cripto_daily(crypto: str = 'bitcoin', currency: str = 'usd', init: b
 
 
 if __name__ == '__main__':
-    ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd', True)  # Initial load
-    # ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd')
+    # ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd', True)  # Initial load
+    ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd')

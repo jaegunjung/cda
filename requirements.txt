@@ -2,3 +2,4 @@ pandas==2.0.1
 pyodbc==4.0.39
 requests==2.30.0
 SQLAlchemy==2.0.12
+beautifulsoup4==4.12.2
