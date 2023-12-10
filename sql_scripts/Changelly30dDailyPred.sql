@@ -5,11 +5,12 @@ DECLARE @CREATE_TEMPLATE VARCHAR(MAX)
 SET @CREATE_TEMPLATE =
 '
 CREATE TABLE  {TBLNAME} (
+    ID int IDENTITY(1,1) primary key,
 	Crypto nvarchar(50) NOT NULL,
 	Date_Pred datetimeoffset (7) NOT NULL,
 	[Date] datetimeoffset (7) NOT NULL,
 	Close_Price_USD decimal(20,2) NOT NULL,
-	Change_perc decimal(5,2) NOT NULL,
+	Change_perc decimal(5,2) NULL,
 	DateTmModified datetimeoffset (7) default SYSDATETIMEOFFSET(),
 )
 CREATE UNIQUE INDEX uidx_Changelly30dDailyPred on {TBLNAME} (Date_Pred, [Date]);

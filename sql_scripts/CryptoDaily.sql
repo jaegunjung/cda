@@ -5,6 +5,7 @@ DECLARE @CREATE_TEMPLATE VARCHAR(MAX)
 SET @CREATE_TEMPLATE = 
 '
 CREATE TABLE  {TBLNAME} (
+    ID int IDENTITY(1,1) primary key,
 	Crypto nvarchar(50) NOT NULL,
 	[Date] datetimeoffset (7) NOT NULL,
 	Open_Price_USD decimal(20,2) NOT NULL,
