@@ -1,0 +1,27 @@
+DECLARE @TBLNAME VARCHAR(255)
+SET @TBLNAME = 'StockDaily'
+
+DECLARE @CREATE_TEMPLATE VARCHAR(MAX)
+SET @CREATE_TEMPLATE =
+'
+CREATE TABLE  {TBLNAME} (
+    ID int IDENTITY(1,1) primary key,
+	Symbol nvarchar(50) NOT NULL,
+	[Date] datetimeoffset (7) NOT NULL,
+	Open_Price_USD decimal(20,2) NOT NULL,
+	High_Price_USD decimal(20,2) NOT NULL,
+	Low_Price_USD decimal(20,2) NOT NULL,
+	Close_Price_USD decimal(20,2) NOT NULL,
+	Adj_Close_Price_USD decimal(20,2) NOT NULL,
+	Volume decimal(30,2) NOT NULL,
+	DateTmModified datetimeoffset (7) default SYSDATETIMEOFFSET(),
+)
+CREATE UNIQUE INDEX uidx_StockDaily on {TBLNAME} (Symbol, [Date]);
+'
+DECLARE @SQL_SCRIPT VARCHAR(MAX)
+
+IF NOT EXISTS (SELECT * FROM SYSOBJECTS WHERE NAME=@TBLNAME AND XTYPE='U')
+BEGIN
+	SET @SQL_SCRIPT = REPLACE(@CREATE_TEMPLATE, '{TBLNAME}', @TBLNAME)
+	EXECUTE (@SQL_SCRIPT)
+END;

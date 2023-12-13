@@ -20,6 +20,10 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Python compiled files and caches
+*.pyc
+__pycache__
+
 # Project specific
 settings_local.py
 
