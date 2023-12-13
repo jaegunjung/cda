@@ -13,7 +13,7 @@ CREATE TABLE  {TBLNAME} (
 	Market_Cap_USD decimal(38,2) NOT NULL,
 	DateTmModified datetimeoffset (7) default SYSDATETIMEOFFSET(),
 )
-CREATE UNIQUE INDEX uidx_CryptoDaily on {TBLNAME} ([Date]);
+CREATE UNIQUE INDEX uidx_CryptoDaily on {TBLNAME} (Crypto, [Date]);
 '
 DECLARE @SQL_SCRIPT VARCHAR(MAX)
 

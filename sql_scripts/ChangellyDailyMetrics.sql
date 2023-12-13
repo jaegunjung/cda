@@ -26,7 +26,7 @@ CREATE TABLE  {TBLNAME} (
 	RSI_14d decimal(20,2) NOT NULL,
 	DateTmModified datetimeoffset (7) default SYSDATETIMEOFFSET(),
 )
-CREATE UNIQUE INDEX uidx_ChangellyDailyMetrics on {TBLNAME} ([Date_Pred]);
+CREATE UNIQUE INDEX uidx_ChangellyDailyMetrics on {TBLNAME} (Crypto, [Date_Pred]);
 '
 DECLARE @SQL_SCRIPT VARCHAR(MAX)
 

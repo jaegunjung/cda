@@ -13,7 +13,7 @@ CREATE TABLE  {TBLNAME} (
 	Change_perc decimal(5,2) NULL,
 	DateTmModified datetimeoffset (7) default SYSDATETIMEOFFSET(),
 )
-CREATE UNIQUE INDEX uidx_Changelly30dDailyPred on {TBLNAME} (Date_Pred, [Date]);
+CREATE UNIQUE INDEX uidx_Changelly30dDailyPred on {TBLNAME} (Crypto, Date_Pred, [Date]);
 '
 DECLARE @SQL_SCRIPT VARCHAR(MAX)
 

@@ -14,7 +14,7 @@ CREATE TABLE  {TBLNAME} (
 	Max_Close_Price_USD decimal(20,2) NOT NULL,
 	DateTmModified datetimeoffset (7) default SYSDATETIMEOFFSET(),
 )
-CREATE UNIQUE INDEX uidx_Changelly10yYearlyPred on {TBLNAME} (Date_Pred, [Year]);
+CREATE UNIQUE INDEX uidx_Changelly10yYearlyPred on {TBLNAME} (Crypto, Date_Pred, [Year]);
 '
 DECLARE @SQL_SCRIPT VARCHAR(MAX)
 
