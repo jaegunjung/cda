@@ -27,6 +27,22 @@ def datetag(year: bool = False) -> str:
     return dt.datetime.now().strftime(form)
 
 
+def count_n_days(start: str, end: str) -> int:
+    """
+    Return no of days between end and start
+    :param start: YYYY-MM-DD
+    :param end: YYYY-MM-DD
+    :return:
+    """
+
+    # Convert text to datetime objects
+    start_date_obj = dt.datetime.strptime(start, '%Y-%m-%d')
+    end_date_obj = dt.datetime.strptime(end, '%Y-%m-%d')
+
+    # Calculate the difference in days
+    return (end_date_obj - start_date_obj).days
+
+
 def time_to_run(func: Callable, *args, **kwargs) -> None:
     """
     print time to take to run func in second
