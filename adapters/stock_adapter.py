@@ -26,7 +26,7 @@ def get_end_date():
 
 def find_latest_date(Symbol):
     qry = """
-    SELECT CONVERT(VARCHAR, max(Date), 23) as latest_date
+    SELECT CONVERT(VARCHAR, DATEADD(DAY, 1, max(Date)), 23) as latest_date
     FROM [cda].[dbo].[StockDaily]
     where Symbol = '{}'
     """.format(Symbol)
@@ -42,7 +42,7 @@ def process_stock_daily(symbols) -> None:
     for Symbol in symbols:
         start = find_latest_date(Symbol)
         n_days = ut.count_n_days(start, end)
-        if n_days <= 1:
+        if n_days <= 0:
             print('No new data!')
             return
         df = yf.download(Symbol, start=start, end=end)
@@ -58,6 +58,5 @@ def process_stock_daily(symbols) -> None:
 
 
 if __name__ == '__main__':
-    # symbols = ['^GSPC', '^DJI', 'AMZN', 'ENVX']
-    symbols = ['ENVX']
+    symbols = ['^GSPC', '^DJI', 'AMZN', 'ENVX']
     ut.time_to_run(process_stock_daily, symbols)
