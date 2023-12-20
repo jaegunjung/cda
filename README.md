@@ -24,7 +24,7 @@ Crypto Data Analysis
 
 ### 2. Prepare Database and tables in the SQL server in development environment
 1. Install following software programs to host the MS SQL server.
-	- SQL Server Management Studio (https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver15)
+	- SQL Server Management Studio (https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver16)
 	- SQL Server Express (https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
 2. Grant sysadmin permissions to yourself on your local SQL Server Express
     - Run SQL Server Management Studio as Administrator
