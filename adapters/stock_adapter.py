@@ -58,5 +58,5 @@ def process_stock_daily(symbols) -> None:
 
 
 if __name__ == '__main__':
-    symbols = ['^GSPC', '^DJI', 'AMZN', 'ENVX']
+    symbols = ['^GSPC', '^DJI', 'AMZN', 'ENVX', 'AAPL', 'VFIAX', 'TSLA', 'QQQ', 'META', 'GOOG']
     ut.time_to_run(process_stock_daily, symbols)
