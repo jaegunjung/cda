@@ -115,9 +115,6 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
         print('No update in the website. Skip the processing.')
         return today, daily, annual, monthly
 
-    # If the post date is older than the current UTC date, skip.
-    if pd.Timestamp(date_object).date() < pd.Timestamp(datetime.utcnow() + timedelta(hours=-3)).date():
-        raise Exception("Website has not been updated.")
     date_pred = date_object.strftime('%Y-%m-%d %H:%M:%S%z')[:22] + ':' + date_object.strftime('%z')[3:]
 
     # Find all tables on the page
