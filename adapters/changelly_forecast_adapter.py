@@ -91,7 +91,7 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
     url = 'https://changelly.com/blog/bitcoin-price-prediction/'
 
     tdy_idx, dly_idx, ann_idx = 0, 1, 2
-    mo_beg_idx, mo_end_idx = 3, 11
+    mo_beg_idx, mo_end_idx = 3, 15
 
     # Send a GET request to the website
     response = requests.get(url)
@@ -178,7 +178,8 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
             # Use the value from the post date as the starting point and add one day to each subsequent row
             for i in df.index:
                 df.at[i, 'Year'] = df['Year'].iloc[0] + pd.DateOffset(years=i)
-            if (last_annual == df[last_annual.columns]).all().all():
+            if (len(last_annual) == len(df[last_annual.columns])) and \
+                    (last_annual == df[last_annual.columns]).all().all():
                 print("10 year annual forecast has not been updated.")
                 continue
             annual = df.copy()
