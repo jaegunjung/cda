@@ -40,12 +40,16 @@ def find_latest_date(Symbol):
 def process_stock_daily(symbols) -> None:
     end = get_end_date()
     for Symbol in symbols:
+        print(Symbol)
         start = find_latest_date(Symbol)
         n_days = ut.count_n_days(start, end)
         if n_days <= 0:
             print('No new data!')
-            return
+            continue
         df = yf.download(Symbol, start=start, end=end)
+        if df.empty:
+            print('Empty df - No new data!')
+            continue
         df['Symbol'] = Symbol
         df.reset_index(inplace=True)
         df = df.rename(
@@ -54,9 +58,12 @@ def process_stock_daily(symbols) -> None:
                      'Low': 'Low_Price_USD',
                      'Close': 'Close_Price_USD',
                      'Adj Close': 'Adj_Close_Price_USD'})
+        if (df['Date'] < start).iloc[0]:
+            print('df is older than start - No new data!')
+            continue
         ut.df_to_db(df, 'StockDaily')
 
 
 if __name__ == '__main__':
-    symbols = ['^GSPC', '^DJI', 'AMZN', 'ENVX', 'AAPL', 'VFIAX', 'TSLA', 'QQQ', 'META', 'GOOG']
+    symbols = ['^GSPC', '^DJI', 'AMZN', 'ENVX', 'AAPL', 'VFIAX', 'TSLA', 'QQQ', 'META', 'GOOG', 'NVDA']
     ut.time_to_run(process_stock_daily, symbols)
