@@ -34,17 +34,17 @@ SELECT Symbol, FORMAT([Date], 'yyyy-MM') as [YearMo]
 into #mo_open_price
   FROM [cda].[dbo].[StockDaily]
   where (Symbol in (select value from #tickers)
-  and FORMAT([Date], 'yyyy-MM-dd') in 
-  (select beg_date from #mo_beg_end_dates))
-  or (Symbol = 'ENVX' and FORMAT([Date], 'yyyy-MM-dd') = '2021-01-05')
+and FORMAT([Date], 'yyyy-MM-dd') in 
+(select beg_date from #mo_beg_end_dates))
+or (Symbol = 'ENVX' and FORMAT([Date], 'yyyy-MM-dd') = '2021-01-05')
 
 SELECT Symbol, FORMAT([Date], 'yyyy-MM') as [YearMo]
       ,[Close_Price_USD]
 into #mo_close_price
   FROM [cda].[dbo].[StockDaily]
   where Symbol in (select value from #tickers)
-  and FORMAT([Date], 'yyyy-MM-dd') in 
-  (select end_date from #mo_beg_end_dates)
+and FORMAT([Date], 'yyyy-MM-dd') in 
+(select end_date from #mo_beg_end_dates)
 
 select o.Symbol, o.YearMo, o.Open_Price_USD, c.Close_Price_USD, (c.Close_Price_USD/o.Open_Price_USD -1) * 100 as rate_per
 into Anal_mon_stocks
@@ -52,5 +52,5 @@ from #mo_open_price o
 left join #mo_close_price c on o.YearMo = c.YearMo and o.Symbol = c.Symbol
 
 select * from Anal_mon_stocks
-where Symbol in ('^GSPC','^DJI','AMZN','ENVX','AAPL','TSLA','GOOG', 'ENVX', 'META', 'QQQ', 'NVDA')
+where YearMo in ('2023-04', '2023-05', '2023-10', '2023-11')
 order by Symbol, YearMo
