@@ -5,19 +5,17 @@ Third Halving: May 11, 2020
 Fourth Halving: Apr 19, 2024
 ******/
 
-drop table if exists #btc_mo
+drop table if exists #btc_yr
 
--- Get the first day of each month data
+-- Get the 1/1 data
 SELECT Date, [Open_Price_USD]
-into #btc_mo
+into #btc_yr
 FROM [cda].[dbo].[CryptoDaily]
-WHERE SUBSTRING(FORMAT([Date], 'MM-dd'), 3, 5) = '-01'
+WHERE SUBSTRING(FORMAT([Date], 'MM-dd'), 1, 5) = '01-01'
 
 -- Calculate APR
-select FORMAT([Date], 'yyyy-MM') as [YearMo], Open_Price_USD, Mo_end_Price, (Mo_end_Price/Open_Price_USD -1) * 100 as rate_per
-into Anal_mon_BTC
+select FORMAT([Date], 'yyyy') as [Year], Open_Price_USD, Yr_end_Price, (Yr_end_Price/Open_Price_USD -1) * 100 as APR_per
+into Anal_ann_BTC
 from
-(select Date, Open_Price_USD, lead(Open_Price_USD) over (order by Date) as Mo_end_Price 
-from #btc_mo) a
-
-select * from Anal_mon_BTC
+(select Date, Open_Price_USD, lead(Open_Price_USD) over (order by Date) as Yr_end_Price 
+from #btc_yr) a
