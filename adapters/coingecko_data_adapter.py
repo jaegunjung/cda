@@ -62,13 +62,15 @@ def calc_days(crypto):
     :return:
     """
     qry = """    
-    select DATEDIFF(DAY, MAX([Date]), GETUTCDATE()) as days from CryptoDaily where Crypto = '{}'
+    select DATEDIFF(DAY, MAX([Date]), GETUTCDATE()) as days, MAX([Date]) as max_rc_date 
+    from CryptoDaily where Crypto = '{}'
     """.format(CRYPTO_SYMBOL[crypto])
     df = ut.query_db(qry)
     days = 0
     if not df.empty:
         days = df['days'].iloc[0]
-    return days
+        mx_rd_date = df['max_rc_date'].iloc[0]
+    return days, mx_rd_date
 
 
 def process_cripto_daily(crypto: str = 'bitcoin', currency: str = 'usd', init: bool = False) -> None:
@@ -82,9 +84,10 @@ def process_cripto_daily(crypto: str = 'bitcoin', currency: str = 'usd', init: b
     if init:
         days = 900000  # Data available from 2013-04-28. Up to 2023-12-03, there are 3870 days. It is more than enough.
     else:
-        days = calc_days(crypto)
+        days, mx_rd_date = calc_days(crypto)
     if days > 0:
         df = load_crypto_daily(crypto, currency, days)
+        df = df[df['Date'] > str(mx_rd_date)]
         ut.df_to_db(df, 'CryptoDaily')
 
 
