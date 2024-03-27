@@ -17,9 +17,9 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import re
-import utils as ut
-from datetime import datetime, timedelta
 import numpy as np
+
+import utils as ut
 
 
 def extract_table_data(table, column_header=True):
@@ -90,8 +90,8 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
     Crypto = 'BTC'
     url = 'https://changelly.com/blog/bitcoin-price-prediction/'
 
-    tdy_idx, dly_idx, ann_idx = 0, 1, 2
-    mo_beg_idx, mo_end_idx = 3, 15
+    dly_idx, ann_idx = 1, 0
+    mo_beg_idx, mo_end_idx = 14, 24
 
     # Send a GET request to the website
     response = requests.get(url)
@@ -117,36 +117,74 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
 
     date_pred = date_object.strftime('%Y-%m-%d %H:%M:%S%z')[:22] + ':' + date_object.strftime('%z')[3:]
 
+    # Grab today's bitcoin statistics
+    statistics = []
+    overview_items = soup.find_all("div", class_="overview-table__item")
+
+    for item in overview_items:
+        name = item.find("div", class_="overview-table__item-name").text.strip()
+        value = item.find("div", class_="overview-table__item-value").text.strip()
+        statistics.append((name, value))
+    df = pd.DataFrame(statistics)
+    df = df.T.rename(columns=df.T.iloc[0]).iloc[1:]
+    df = df.rename(
+        columns={'Bitcoin Price': 'Price_USD', 'Bitcoin Price Change 24h': 'Change_24h_perc',
+                 'Bitcoin Price Change 7d': 'Change_7d_perc', 'Bitcoin Market cap': 'Market_Cap_USD',
+                 'Bitcoin Circulating Supply': 'Circulating_Supply_BTC',
+                 'Bitcoin Trading Volume': 'Trading_Volume_USD',
+                 'Bitcoin All time high': 'All_Time_High', 'Bitcoin All time low': 'All_Time_Low',
+                 'Bitcoin Price Prediction 7d': 'Price_Pred_7d_USD',
+                 'Bitcoin Fear-Greed Index': 'Fear_Greed_Index', 'Bitcoin Sentiment': 'Sentiment',
+                 'Bitcoin Volatility': 'Volatility_perc', 'Bitcoin Green Days': 'GreenDays_30d_perc',
+                 'Bitcoin 50-Day SMA': 'SMA_50d_USD', 'Bitcoin 200-Day SMA': 'SMA_200d_USD',
+                 'Bitcoin 14-Day RSI': 'RSI_14d'})
+    df = clean_changelly_today_df(df)
+    df['Date_Pred'] = date_pred
+    df['Crypto'] = Crypto
+    today = df.copy()
+
+    # monthly result. For 2024, it can be found only from the first fancy table
+    df_mos = []
+    # 결과를 저장할 리스트 초기화
+    predictions = []
+
+    # 예측 테이블 탭에서 년도 추출
+    year = soup.find("figure", class_="prediction-table__prediction-tab-item active")['data-prediction-tab']
+
+    # 테이블 본문을 찾음
+    table_body = soup.find("tbody", class_="prediction-table__table-body")
+    rows = table_body.find_all("tr", class_="prediction-table__body-row")
+
+    # 각 행에서 데이터 추출
+    for row in rows[:-1]:  # remove the last item, All Time
+        month = row.find("td", class_="prediction-table__column-value month-item").text + f" {year}"
+        min_price = row.find("td", class_="prediction-table__column-value min-item").text.strip()
+        avg_price = row.find("td", class_="prediction-table__column-value average-item").text.strip()
+        max_price = row.find("td", class_="prediction-table__column-value max-item").text.strip()
+
+        predictions.append({
+            "Month": month,
+            "Minimum Price": min_price,
+            "Average Price": avg_price,
+            "Maximum Price": max_price,
+        })
+    df = pd.DataFrame(predictions)
+    df['Date_Pred'] = date_pred
+    df['Crypto'] = Crypto
+    df_mos.append(df)
+
     # Find all tables on the page
     tables = soup.find_all('table')
     if not tables:
         raise Exception("No tables found on the webpage.")
 
     # Extract data from each table and create Pandas DataFrames
-    df_mos = []
-    for idx, table in enumerate(tables[:-1]):  # Exclude the last table
-        if idx == tdy_idx:
-            df = extract_table_data(table, column_header=False)
-            df = df.T.rename(columns=df.T.iloc[0]).iloc[1:]
-            df = df.rename(
-                columns={'Bitcoin Price': 'Price_USD', 'Bitcoin Price Change 24h': 'Change_24h_perc',
-                         'Bitcoin Price Change 7d': 'Change_7d_perc', 'Bitcoin Market cap': 'Market_Cap_USD',
-                         'Bitcoin Circulating Supply': 'Circulating_Supply_BTC',
-                         'Bitcoin Trading Volume': 'Trading_Volume_USD',
-                         'Bitcoin All time high': 'All_Time_High', 'Bitcoin All time low': 'All_Time_Low',
-                         'Bitcoin Price Prediction 7d': 'Price_Pred_7d_USD',
-                         'Bitcoin Fear-Greed Index': 'Fear_Greed_Index', 'Bitcoin Sentiment': 'Sentiment',
-                         'Bitcoin Volatility': 'Volatility_perc', 'Bitcoin Green Days': 'GreenDays_30d_perc',
-                         'Bitcoin 50-Day SMA': 'SMA_50d_USD', 'Bitcoin 200-Day SMA': 'SMA_200d_USD',
-                         'Bitcoin 14-Day RSI': 'RSI_14d'})
-            df = clean_changelly_today_df(df)
-            df['Date_Pred'] = date_pred
-            df['Crypto'] = Crypto
-            today = df.copy()
-        else:
-            df = extract_table_data(table)
-            df['Date_Pred'] = date_pred
-            df['Crypto'] = Crypto
+
+    # Rest of years
+    for idx, table in enumerate(tables):
+        df = extract_table_data(table)
+        df['Date_Pred'] = date_pred
+        df['Crypto'] = Crypto
         if idx == dly_idx:
             df['Date'] = pd.to_datetime(df['Date'])
             # If the first date is not equal to post date + 1, skip.
@@ -171,17 +209,18 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
             for col in ['Min_Close_Price_USD', 'Avg_Close_Price_USD', 'Max_Close_Price_USD']:
                 df[col] = process_numeric_column(df, col)
             df['Year'] = pd.to_datetime(df['Year'])
-            # If the first year must be the current year
-            if date_object.year != df['Year'].iloc[0].year:
-                raise Exception("Table for 10 years yearly forecast has not been updated.")
+            # If the first year must be the current year - The website still shows 2023 on 1/2/2024
+            # if date_object.year != df['Year'].iloc[0].year:
+            #     raise Exception("Table for 10 years yearly forecast has not been updated.")
 
-            # Use the value from the post date as the starting point and add one day to each subsequent row
-            for i in df.index:
-                df.at[i, 'Year'] = df['Year'].iloc[0] + pd.DateOffset(years=i)
-            if (len(last_annual) == len(df[last_annual.columns])) and \
-                    (last_annual == df[last_annual.columns]).all().all():
-                print("10 year annual forecast has not been updated.")
-                continue
+            # Year increases by 1 from 2024 to 2033. Then, 2040 and 2050.
+            ## Use the value from the post date as the starting point and add one day to each subsequent row
+            # for i in df.index:
+            #     df.at[i, 'Year'] = df['Year'].iloc[0] + pd.DateOffset(years=i)
+            # if (len(last_annual) == len(df[last_annual.columns])) and \
+            #         (last_annual == df[last_annual.columns]).all().all():
+            #     print("10 year annual forecast has not been updated.")
+            #     continue
             annual = df.copy()
         if mo_beg_idx <= idx <= mo_end_idx:
             df_mos.append(df)
@@ -201,9 +240,10 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
         monthly.drop(['Minimum Price', 'Average Price', 'Maximum Price'], axis=1, inplace=True)
         monthly['Month'] = pd.to_datetime(monthly['Month'])
 
-        # Use the value from the post date as the starting point and add one day to each subsequent row
-        for i in monthly.index:
-            monthly.at[i, 'Month'] = monthly['Month'].iloc[0] + pd.DateOffset(months=i)
+        # Year increases by 1 from 2024 to 2033. Then, 2040 and 2050.
+        ## Use the value from the post date as the starting point and add one day to each subsequent row
+        # for i in monthly.index:
+        #     monthly.at[i, 'Month'] = monthly['Month'].iloc[0] + pd.DateOffset(months=i)
     return today, daily, annual, monthly
 
 
