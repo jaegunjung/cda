@@ -90,8 +90,8 @@ def changelly_btc_forecast_grabber(last_rec_dy, last_annual):
     Crypto = 'BTC'
     url = 'https://changelly.com/blog/bitcoin-price-prediction/'
 
-    dly_idx, ann_idx = 1, 0
-    mo_beg_idx, mo_end_idx = 14, 24
+    dly_idx, ann_idx = 0, 24
+    mo_beg_idx, mo_end_idx = 13, 23
 
     # Send a GET request to the website
     response = requests.get(url)
