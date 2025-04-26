@@ -47,6 +47,7 @@ def process_stock_daily(symbols) -> None:
             print('No new data!')
             continue
         df = yf.download(Symbol, start=start, end=end)
+        df = df.xs(Symbol, axis=1, level='Ticker')
         if df.empty:
             print('Empty df - No new data!')
             continue
@@ -56,8 +57,8 @@ def process_stock_daily(symbols) -> None:
             columns={'Open': 'Open_Price_USD',
                      'High': 'High_Price_USD',
                      'Low': 'Low_Price_USD',
-                     'Close': 'Close_Price_USD',
-                     'Adj Close': 'Adj_Close_Price_USD'})
+                     'Close': 'Close_Price_USD'})
+        df['Adj_Close_Price_USD'] = df['Close_Price_USD']
         if (df['Date'] < start).iloc[0]:
             print('df is older than start - No new data!')
             continue
