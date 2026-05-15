@@ -6,6 +6,7 @@ Fourth Halving: Apr 19, 2024
 ******/
 
 drop table if exists #btc_yr
+drop table if exists Anal_ann_BTC
 
 -- Get the 1/1 data
 SELECT Date, [Open_Price_USD]

@@ -1,6 +1,7 @@
 
 drop table #yr_open_price
 drop table #yr_close_price
+drop table Anal_ann_GSPC
 
 SELECT FORMAT([Date], 'yyyy') as [Year]
       ,[Open_Price_USD]
@@ -9,7 +10,7 @@ into #yr_open_price
   where Symbol = '^GSPC'
 and FORMAT([Date], 'yyyy-MM-dd') in 
 ('2014-01-02', '2015-01-02', '2016-01-04', '2017-01-03', '2018-01-02',
-'2019-01-02', '2020-01-02', '2021-01-04', '2022-01-03', '2023-01-03')
+'2019-01-02', '2020-01-02', '2021-01-04', '2022-01-03', '2023-01-03', '2024-01-02', '2025-01-02', '2026-01-02')
 
 SELECT FORMAT([Date], 'yyyy') as [Year]
       ,[Close_Price_USD]
@@ -19,7 +20,7 @@ into #yr_close_price
   and SUBSTRING(FORMAT([Date], 'MM-dd'), 1, 5) in ('12-29', '12-30', '12-31')
 and FORMAT([Date], 'yyyy-MM-dd') in 
 ('2014-12-31', '2015-12-31', '2016-12-30', '2017-12-29', '2018-12-31',
-'2019-12-31', '2020-12-31', '2021-12-31', '2022-12-30')
+'2019-12-31', '2020-12-31', '2021-12-31', '2022-12-30', '2023-12-29', '2024-12-31', '2025-12-31')
 
 select o.year, o.Open_Price_USD, c.Close_Price_USD, (c.Close_Price_USD/o.Open_Price_USD -1) * 100 as APR_per
 into Anal_ann_GSPC
