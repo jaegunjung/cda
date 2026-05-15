@@ -1,10 +1,18 @@
-import yfinance as yf
 import utils as ut
 from datetime import datetime, timedelta
 import pytz
+import time
+import pandas as pd
+import requests
+import os
 
 START = '2013-04-27'  # The first available BTC-USD day - 1
 
+# standard API rate limit is 25 requests per day.
+API_KEY = os.environ.get('alpha_vantage_api_key')
+
+if not API_KEY:
+    raise ValueError('Missing alpha_vantage_api_key environment variable')
 
 def get_end_date():
     """
@@ -42,29 +50,66 @@ def process_stock_daily(symbols) -> None:
     for Symbol in symbols:
         print(Symbol)
         start = find_latest_date(Symbol)
+        start_dt = pd.to_datetime(start)
+
         n_days = ut.count_n_days(start, end)
         if n_days <= 0:
             print('No new data!')
             continue
-        df = yf.download(Symbol, start=start, end=end)
-        df = df.xs(Symbol, axis=1, level='Ticker')
+
+        url = (
+            f'https://www.alphavantage.co/query?'
+            f'function=TIME_SERIES_DAILY&'
+            f'symbol={Symbol}&'
+            f'outputsize=compact&'
+            f'apikey={API_KEY}'
+        )
+
+        r = requests.get(url)
+        data = r.json()
+        print(data)
+
+        time.sleep(1)
+
+        ts = data['Time Series (Daily)']
+
+        rows = []
+
+        for date_str, values in ts.items():
+            rows.append({
+                'Date': pd.to_datetime(date_str),
+                'Open_Price_USD': float(values['1. open']),
+                'High_Price_USD': float(values['2. high']),
+                'Low_Price_USD': float(values['3. low']),
+                'Close_Price_USD': float(values['4. close']),
+                'Adj_Close_Price_USD': float(values['4. close']),
+                'Volume': int(values['5. volume']),
+                'Symbol': Symbol
+            })
+
+        df = pd.DataFrame(rows)
         if df.empty:
             print('Empty df - No new data!')
             continue
-        df['Symbol'] = Symbol
-        df.reset_index(inplace=True)
-        df = df.rename(
-            columns={'Open': 'Open_Price_USD',
-                     'High': 'High_Price_USD',
-                     'Low': 'Low_Price_USD',
-                     'Close': 'Close_Price_USD'})
-        df['Adj_Close_Price_USD'] = df['Close_Price_USD']
-        if (df['Date'] < start).iloc[0]:
-            print('df is older than start - No new data!')
+
+        # Keep only rows newer than latest DB date
+        df = df[df['Date'] >= start_dt]
+
+        # Safety: remove duplicated rows inside dataframe
+        df = df.drop_duplicates(subset=['Date', 'Symbol'])
+
+        # Sort and reset index correctly
+        df = df.sort_values('Date').reset_index(drop=True)
+
+        if df.empty:
+            print('No new rows after filtering by start date!')
             continue
+
+        print(df.head())
+
         ut.df_to_db(df, 'StockDaily')
 
 
 if __name__ == '__main__':
-    symbols = ['^GSPC', '^DJI', 'AMZN', 'ENVX', 'AAPL', 'VFIAX', 'TSLA', 'QQQ', 'META', 'GOOG', 'NVDA']
+    symbols = ['SPY', 'DIA', 'AMZN', 'ENVX', 'AAPL', 'VFIAX', 'TSLA', 'QQQ', 'META', 'GOOG', 'NVDA']
     ut.time_to_run(process_stock_daily, symbols)
