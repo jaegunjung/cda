@@ -33,3 +33,6 @@ settings_local.py
 # Coverage report
 htmlcov/
 .coverage
+
+# data files
+export/
