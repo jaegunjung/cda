@@ -17,7 +17,7 @@ import requests
 import pandas as pd
 import utils as ut
 
-CRYPTO_SYMBOL = {'bitcoin': 'BTC'}
+CRYPTO_SYMBOL = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'pepe': 'PEPE'}
 
 
 def load_crypto_daily(crypto: str = 'bitcoin', currency: str = 'usd', days: int = 5) -> pd.DataFrame:
@@ -34,6 +34,7 @@ def load_crypto_daily(crypto: str = 'bitcoin', currency: str = 'usd', days: int 
     params = {'vs_currency': currency, 'days': days, 'interval': 'daily'}
     response = requests.get(url, params=params)
     data = response.json()
+    print(data)
 
     # Construct three dataframes
     prices = pd.DataFrame(data['prices'], columns=['time', 'price'])
@@ -82,15 +83,23 @@ def process_cripto_daily(crypto: str = 'bitcoin', currency: str = 'usd', init: b
     :return:
     """
     if init:
-        days = 900000  # Data available from 2013-04-28. Up to 2023-12-03, there are 3870 days. It is more than enough.
+        # days = 900000  # Data available from 2013-04-28. Up to 2023-12-03, there are 3870 days. It is more than enough.
+        days = 365  #  Public API users are limited to querying historical data within the past 365 days.
     else:
         days, mx_rd_date = calc_days(crypto)
     if days > 0:
         df = load_crypto_daily(crypto, currency, days)
-        df = df[df['Date'] > str(mx_rd_date)]
+        if not init:
+            df = df[df['Date'] > str(mx_rd_date)]
         ut.df_to_db(df, 'CryptoDaily')
 
 
 if __name__ == '__main__':
-    # ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd', True)  # Initial load
-    ut.time_to_run(process_cripto_daily, 'bitcoin', 'usd')
+    # ut.time_to_run(process_cripto_daily, '', 'usd', True)  # Initial load
+    # ut.time_to_run(process_cripto_daily, '', 'usd')
+    # ut.time_to_run(process_cripto_daily, 'ethereum', 'usd', True)  # Initial load
+    # ut.time_to_run(process_cripto_daily, 'pepe', 'usd', True)  # Initial load
+    
+    for coin in ['bitcoin', 'bitcoin', 'pepe']:
+        ut.time_to_run(process_cripto_daily, coin, 'usd')  # Initial load
+    
