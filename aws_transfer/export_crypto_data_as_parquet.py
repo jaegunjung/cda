@@ -4,10 +4,6 @@ import pandas as pd
 
 S3_BUCKET = "cda-data-lake-jaegun"
 
-cryptos = ["BTC"]
-
-crypto_list = ", ".join([f"'{c}'" for c in cryptos])
-
 query = f"""
 SELECT
   [Crypto],
@@ -16,7 +12,6 @@ SELECT
   [Total_Volume_USD],
   [Market_Cap_USD]
 FROM [cda].[dbo].[CryptoDaily]
-WHERE [Crypto] IN ({crypto_list})
 ORDER BY [date], [Crypto]
 """
 
