@@ -10,7 +10,7 @@ import requests
 s3 = boto3.client("s3")
 
 BUCKET = os.environ.get("BUCKET", "cda-data-lake-jaegun")
-PREFIX = os.environ.get("PREFIX", "market")
+PREFIX = os.environ.get("PREFIX", "market/stock")
 PARQUET_FILE_NAME = os.environ.get("PARQUET_FILE_NAME", "market_data.parquet")
 SYMBOLS = os.environ.get(
     "SYMBOLS",
@@ -161,6 +161,56 @@ def read_existing_parquet(bucket, key):
         return pd.DataFrame()
 
 
+def read_existing_parquet_prefix(bucket, prefix):
+    frames = []
+    response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+
+    for item in response.get("Contents", []):
+        key = item["Key"]
+        if not key.endswith(".parquet"):
+            continue
+
+        obj = s3.get_object(Bucket=bucket, Key=key)
+        frames.append(pd.read_parquet(io.BytesIO(obj["Body"].read())))
+
+    if not frames:
+        return pd.DataFrame()
+
+    return pd.concat(frames, ignore_index=True)
+
+
+def get_stock_parquet_key(year):
+    return f"{PREFIX}/year={year}/{PARQUET_FILE_NAME}"
+
+
+def get_stock_partition_prefix(year):
+    return f"{PREFIX}/year={year}/"
+
+
+def read_existing_stock_year(year):
+    key = get_stock_parquet_key(year)
+    df = read_existing_parquet(BUCKET, key)
+    if not df.empty:
+        return normalize_stock_df(df)
+
+    prefix = get_stock_partition_prefix(year)
+    return normalize_stock_df(read_existing_parquet_prefix(BUCKET, prefix))
+
+
+def read_existing_stock_years(years):
+    frames = []
+
+    for year in years:
+        df = read_existing_stock_year(year)
+        if not df.empty:
+            frames.append(df)
+
+    if not frames:
+        return pd.DataFrame(columns=TARGET_COLUMNS)
+
+    return normalize_stock_df(pd.concat(frames, ignore_index=True))
+
+
 def write_parquet_to_s3(df, bucket, key):
     buffer = io.BytesIO()
     df.to_parquet(buffer, index=False, engine="pyarrow")
@@ -194,11 +244,29 @@ def lambda_handler(event, context):
         }
 
     uploads = []
+    years = sorted(new_df["price_date"].str[:4].unique())
+    existing_all_df = read_existing_stock_years(years)
+    rows_to_upload = filter_new_rows(new_df, existing_all_df)
 
-    for year, year_new_df in new_df.groupby(new_df["price_date"].str[:4]):
-        key = f"{PREFIX}/year={year}/{PARQUET_FILE_NAME}"
+    if rows_to_upload.empty:
+        print("No new stock rows to upload")
+        return {
+            "statusCode": 200,
+            "rows_uploaded": 0,
+            "uploads": [
+                {
+                    "year": year,
+                    "rows_uploaded": 0,
+                    "s3_key": get_stock_parquet_key(year),
+                }
+                for year in years
+            ],
+        }
 
-        existing_df = normalize_stock_df(read_existing_parquet(BUCKET, key))
+    for year, year_new_df in rows_to_upload.groupby(rows_to_upload["price_date"].str[:4]):
+        key = get_stock_parquet_key(year)
+
+        existing_df = read_existing_stock_year(year)
         rows_to_add = filter_new_rows(year_new_df, existing_df)
 
         if rows_to_add.empty:
