@@ -48,7 +48,7 @@ def find_latest_date(Symbol):
     return latest_date
 
 
-def process_stock_daily(symbols, output_dir: str = 'assets/data/stocks') -> None:
+def process_stock_daily(symbols, output_dir: str = None) -> None:
     end = get_end_date()
     for Symbol in symbols:
         print(Symbol)
@@ -62,7 +62,7 @@ def process_stock_daily(symbols, output_dir: str = 'assets/data/stocks') -> None
 
         url = (
             f'https://www.alphavantage.co/query?'
-            f'function=TIME_SERIES_DAILY_ADJUSTED&'
+            f'function=TIME_SERIES_DAILY&'
             f'symbol={Symbol}&'
             f'outputsize=compact&'
             f'apikey={API_KEY}'
@@ -70,23 +70,27 @@ def process_stock_daily(symbols, output_dir: str = 'assets/data/stocks') -> None
 
         r = requests.get(url)
         data = r.json()
-        print(data)
 
         time.sleep(1)
+
+        if 'Time Series (Daily)' not in data:
+            print(f'Skipping {Symbol}: unexpected response: {data}')
+            continue
 
         ts = data['Time Series (Daily)']
 
         rows = []
 
         for date_str, values in ts.items():
+            close = float(values['4. close'])
             rows.append({
                 'Date': pd.to_datetime(date_str),
                 'Open_Price_USD': float(values['1. open']),
                 'High_Price_USD': float(values['2. high']),
                 'Low_Price_USD': float(values['3. low']),
-                'Close_Price_USD': float(values['4. close']),
-                'Adj_Close_Price_USD': float(values['5. adjusted close']),
-                'Volume': int(values['6. volume']),
+                'Close_Price_USD': close,
+                'Adj_Close_Price_USD': close,
+                'Volume': int(values['5. volume']),
                 'Symbol': Symbol
             })
 
@@ -111,7 +115,8 @@ def process_stock_daily(symbols, output_dir: str = 'assets/data/stocks') -> None
         print(df.head())
 
         ut.df_to_db(df, 'StockDaily')
-        export_symbol_csv(Symbol, output_dir)
+        if output_dir:
+            export_symbol_csv(Symbol, output_dir)
 
 
 _CSV_QRY = """
@@ -139,5 +144,5 @@ if __name__ == '__main__':
     with open('config/symbols.json') as f:
         cfg = json.load(f)
     symbols = cfg['stocks']
-    output_dir = cfg.get('csv_output_dir', 'assets/data/stocks')
+    output_dir = cfg.get('csv_output_dir') if '--export-csv' in __import__('sys').argv else None
     ut.time_to_run(process_stock_daily, symbols, output_dir=output_dir)
