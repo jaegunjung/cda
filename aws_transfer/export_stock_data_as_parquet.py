@@ -33,7 +33,7 @@ df["month"] = df["price_date"].dt.month.astype(str).str.zfill(2)
 df["price_date"] = df["price_date"].dt.strftime("%Y-%m-%d")
 
 for year, part in df.groupby("year"):
-    local_dir = f"export/market/year={year}"
+    local_dir = f"export/market/stock/year={year}"
     os.makedirs(local_dir, exist_ok=True)
 
     local_file = f"{local_dir}/market_data.parquet"
